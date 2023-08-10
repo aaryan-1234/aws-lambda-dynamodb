@@ -1,0 +1,16 @@
+{
+  "scripts": {
+    "test": "mocha tests/unit-tests/ --timeout 10000"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1432.0",
+    "bluebird": "^3.7.2",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "axios": "^1.4.0",
+    "chai": "^4.3.7",
+    "chai-http": "^4.4.0",
+    "mocha": "^10.2.0"
+  }
+}

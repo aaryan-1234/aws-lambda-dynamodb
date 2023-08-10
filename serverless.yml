@@ -1,0 +1,80 @@
+service: candidate-service
+
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  environment:
+    CANDIDATE_TABLE: ${self:service}-${sls:stage}
+    CANDIDATE_EMAIL_TABLE: "candidate-email-${sls:stage}"
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+      Resource: 
+        - "arn:aws:dynamodb:*:*:table/candidate-service-dev"
+        - "arn:aws:dynamodb:us-east-1:702810656113:table/candidate-service-dev/index/EmailIndex"
+
+functions:
+  candidateSubmission:
+    handler: api/candidate.submit
+    memorySize: 128
+    description: Submit candidate information and starts interview process.
+    events:
+      - http:
+          path: candidates
+          method: post
+  listCandidates:
+    handler: api/candidate.list
+    memorySize: 128
+    description: List all candidates
+    events:
+      - http: 
+          path: candidates
+          method: get 
+  candidateDetails:
+    handler: api/candidate.get
+    events:
+      - http:
+          path: candidates/{email}
+          method: get
+  
+resources:
+  Resources:
+    CandidatesDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S" 
+          - AttributeName: "email"
+            AttributeType: "S"
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        GlobalSecondaryIndexes:
+          - IndexName: EmailIndex
+            KeySchema:
+              - AttributeName: "email"
+                KeyType: HASH
+            Projection:
+              ProjectionType: 'ALL'
+            ProvisionedThroughput:
+              ReadCapacityUnits: 5
+              WriteCapacityUnits: 5
+              
+
+        TableName: ${self:provider.environment.CANDIDATE_TABLE}
